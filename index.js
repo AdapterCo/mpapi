@@ -55,29 +55,27 @@ app.post('/pagamento', async (req, res) => {
 // Rota GET para verificar o status do pagamento
 app.get('/verificar/:id', async (req, res) => {
     const pagamentoId = req.params.id; // Captura o ID do pagamento da URL
-    const { token } = req.body; // Captura o token do corpo da requisição
+    const authHeader = req.headers['authorization']; // Captura o token do cabeçalho
 
     // Validação do token
-    if (!token) {
-        return res.status(400).json({ message: 'Token não fornecido.' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(400).json({ message: 'Token não fornecido ou mal formatado.' });
     }
+
+    const token = authHeader.split(' ')[1]; // Remove o 'Bearer' e captura apenas o token
 
     try {
         const response = await axios.get(`https://api.mercadopago.com/v1/payments/${pagamentoId}`, {
             headers: {
-                Authorization: `Bearer ${token}`, // Usa o token fornecido no body
+                Authorization: `Bearer ${token}`, // Usa o token fornecido no cabeçalho
             },
         });
 
         const pagamento = response.data;
-        const statuss = pagamento.status;
+        const status = pagamento.status;
 
-        // Verifica se o pagamento foi aprovado
-        if (statuss === 'approved') {
-            return res.status(200).json({ statuss });
-        } else {
-            return res.status(200).json({ statuss });
-        }
+        // Retorna o status do pagamento
+        return res.status(200).json({ status });
     } catch (error) {
         console.error('Erro ao verificar pagamento:', error.response ? error.response.data : error.message);
         return res.status(500).json({ message: 'Erro ao verificar pagamento', error: error.response ? error.response.data : error.message });
