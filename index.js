@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = 3000;
@@ -22,16 +23,20 @@ app.post('/pagamento', async (req, res) => {
     }
 
     try {
+
+        const idempotencyKey = uuidv4();
+
         const response = await axios.post('https://api.mercadopago.com/v1/payments', {
             transaction_amount: valor,
             description: 'Pagamento via PIX',
             payment_method_id: 'pix',
             payer: {
-                email: 'payer_email@gmail.com', // Substitua pelo e-mail do pagador
+                email: 'payer_email@gmail.com',
             },
         }, {
             headers: {
-                Authorization: `Bearer ${token}`, // Usa o token fornecido no body
+                Authorization: `Bearer ${token}`, 
+                'X-Idempotency-Key': idempotencyKey,
             },
         });
 
